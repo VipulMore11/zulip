@@ -47,6 +47,14 @@ from zproject.backends import is_user_active
 
 logger = logging.getLogger(__name__)
 
+CHARSET_ALIASES = {
+    "iso-8859-8-i": "iso-8859-8",
+}
+
+
+def normalize_email_mirror_charset(charset: str) -> str:
+    return CHARSET_ALIASES.get(charset.lower(), charset)
+
 
 def redact_email_address(error_message: str) -> str:
     if not settings.EMAIL_GATEWAY_EXTRA_PATTERN_HACK:
@@ -240,7 +248,8 @@ def get_message_part_by_type(message: EmailMessage, content_type: str) -> str | 
             charset = charsets[idx]
             if charset is not None:
                 try:
-                    return content.decode(charset, errors="ignore")
+                    normalized_charset = normalize_email_mirror_charset(charset)
+                    return content.decode(normalized_charset, errors="ignore")
                 except LookupError:
                     # The RFCs do not define how to handle unknown
                     # charsets, but treating as US-ASCII seems
